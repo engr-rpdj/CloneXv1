@@ -752,11 +752,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Digital Twin API", version="3.0")
 
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 @app.get("/app")
 def serve_frontend():
-    return FileResponse("frontend/index.html")
+    return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 app.add_middleware(
     CORSMiddleware,
