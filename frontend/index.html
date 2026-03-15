@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <title>AI Digital Twin</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -369,9 +369,131 @@
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+
+/* ============================================================
+   MOBILE RESPONSIVE PATCH
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+  body { overflow: hidden; }
+
+  /* ── HEADER ── */
+  header { padding: 0 1rem; }
+
+  /* ── LAYOUT: stack panels vertically ── */
+  .layout {
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL: becomes a slide-up drawer ── */
+  .panel-left {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    width: 100%;
+    height: 85vh;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 200;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+    overflow-y: auto;
+  }
+  .panel-left.drawer-open {
+    transform: translateY(0);
+  }
+
+  /* Drag handle at top of drawer */
+  .panel-left::before {
+    content: '';
+    display: block;
+    width: 40px; height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 12px auto 8px;
+    flex-shrink: 0;
+  }
+
+  /* Overlay behind drawer */
+  #drawerOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 199;
+  }
+  #drawerOverlay.open { display: block; }
+
+  /* ── RIGHT PANEL: fills screen ── */
+  .panel-right {
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ── CHAT HEADER: add create button ── */
+  .chat-header {
+    padding: 0 1rem;
+    justify-content: space-between;
+  }
+
+  /* ── MESSAGES ── */
+  .messages { padding: 1rem; }
+  .msg { max-width: 90%; }
+
+  /* ── CHAT INPUT ── */
+  .chat-input-row { padding: 0.75rem 1rem; }
+
+  /* ── MOBILE FAB (Floating Action Button) ── */
+  #mobileFab {
+    display: flex;
+    position: fixed;
+    bottom: 80px; right: 16px;
+    width: 48px; height: 48px;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: 50%;
+    font-size: 22px;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(45,91,227,0.35);
+    z-index: 198;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  #mobileFab:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(45,91,227,0.45); }
+
+  /* ── STATUS BOX ── */
+  .status-box { font-size: 11px; }
+
+  /* ── PANEL SECTION ── */
+  .panel-section { padding: 1rem 1rem 0; }
+
+  /* ── AVATAR CHIPS ── */
+  .avatar-list { padding: 0.75rem 1rem 1rem; }
+  .avatar-chip { padding: 8px; }
+  .avatar-name { font-size: 12px; }
+  .avatar-meta { font-size: 10px; }
+  .download-btn, .clear-btn { font-size: 10px; padding: 2px 6px; }
+
+  /* ── CHAT HINT ── */
+  .chat-hint { font-size: 10px; padding-bottom: 0.25rem; }
+}
+
+@media (max-width: 480px) {
+  .msg { max-width: 95%; }
+  .msg-bubble { font-size: 12px; padding: 8px 11px; }
+  .chat-header { height: 48px; }
+  header { height: 48px; }
+}
+
 </style>
 </head>
 <body>
+  <div id="drawerOverlay" onclick="closeDrawer()"></div>
+  
 
 <header>
   <div class="logo">Clone<span>X</span></div>
@@ -796,6 +918,50 @@ async function loadAvatars() {
 }
 
 loadAvatars();
+
+/* ── MOBILE DRAWER ── */
+function toggleDrawer() {
+  const panel   = document.querySelector('.panel-left');
+  const overlay = document.getElementById('drawerOverlay');
+  const fab     = document.getElementById('mobileFab');
+  const isOpen  = panel.classList.contains('drawer-open');
+  if (isOpen) {
+    panel.classList.remove('drawer-open');
+    overlay.classList.remove('open');
+    fab.textContent = '＋';
+  } else {
+    panel.classList.add('drawer-open');
+    overlay.classList.add('open');
+    fab.textContent = '✕';
+  }
+}
+
+function closeDrawer() {
+  document.querySelector('.panel-left').classList.remove('drawer-open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('mobileFab').textContent = '＋';
+}
+
+// Auto-close drawer when an avatar is selected on mobile
+const _origSelectAvatar = selectAvatar;
+window.selectAvatar = function(id) {
+  _origSelectAvatar(id);
+  if (window.innerWidth <= 768) closeDrawer();
+};
+
+// Auto-close drawer after successful upload on mobile
+const _origShowUploadStatus = showUploadStatus;
+window.showUploadStatus = function(msg, type) {
+  _origShowUploadStatus(msg, type);
+  if (type === 'ok' && window.innerWidth <= 768) {
+    setTimeout(() => closeDrawer(), 1200);
+  }
+};
+
 </script>
+<!-- Mobile FAB to open the create/avatar drawer -->
+<button id="mobileFab" onclick="toggleDrawer()" title="Create avatar">
+  ＋
+</button>
 </body>
 </html>
