@@ -554,7 +554,7 @@
 
     <div class="chat-header" id="chatHeader">
       <div class="empty-state" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:0;">
-        <span style="font-size:13px;color:var(--text-hint);">Select an avatar to start chatting</span>
+        <span style="font-size:13px;color:var(--text-hint);">Create an avatar to start chatting</span>
       </div>
     </div>
 
@@ -885,7 +885,7 @@ async function clearAvatar(id, name) {
         state.activeAvatar = null;
         document.getElementById('chatHeader').innerHTML = `
           <div class="empty-state" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:0;">
-            <span style="font-size:13px;color:var(--text-hint);">Select an avatar on the left to start chatting</span>
+            <span style="font-size:13px;color:var(--text-hint);">Create an avatar to start chatting</span>
           </div>`;
         document.getElementById('chatBody').innerHTML = `
           <div class="empty-state">
