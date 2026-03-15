@@ -1,6 +1,5 @@
 ﻿--extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.2+cpu
-torchvision==0.17.2+cpu
+torch==2.4.0+cpu
 fastapi
 uvicorn[standard]
 python-dotenv
@@ -8,6 +7,6 @@ google-genai
 pypdf
 faiss-cpu
 sentence-transformers
-numpy
+numpy<2
 python-docx
 python-multipart
