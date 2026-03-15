@@ -1,0 +1,15 @@
+﻿__pycache__/
+*.py[cod]
+venv/
+env/
+.venv/
+backend/.env
+.env
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+data/avatars/*/index.faiss
+data/avatars/*/chunks.json
+data/avatars/*/files/
+!data/avatars/.gitkeep
