@@ -99,7 +99,8 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 #MODEL = "gemini-2.5-flash"
-MODEL = "gemini-2.0-flash"
+#MODEL = "gemini-2.0-flash"
+MODEL = "gemini-2.0-flash-lite"
 
 BANNED_PHRASES = """
 Writing style rules — follow these strictly:
