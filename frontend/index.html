@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Digital Twin</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --border-strong: #c8c6bc;
+    --text: #1a1a18;
+    --text-muted: #6b6963;
+    --text-hint: #a09d96;
+    --accent: #2d5be3;
+    --accent-bg: #eef2fd;
+    --accent-text: #1a3da8;
+    --success-bg: #eaf3de;
+    --success-text: #27500a;
+    --error-bg: #fcebeb;
+    --error-text: #791f1f;
+    --warn-bg: #faeeda;
+    --warn-text: #633806;
+    --avatar-bg: #eeedfe;
+    --avatar-text: #3c3489;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--accent); }
+
+  #backend-url-input {
+    font-size: 12px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text-muted);
+    width: 220px;
+    outline: none;
+  }
+  #backend-url-input:focus { border-color: var(--accent); color: var(--text); }
+
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .panel-left {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    padding: 1.25rem 1.25rem 0;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-hint);
+    margin-bottom: 0.75rem;
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  label.field-label:first-of-type { margin-top: 0; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); background: var(--surface); }
+
+  .drop-zone {
+    margin-top: 10px;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    background: var(--bg);
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+  }
+  .drop-icon {
+    width: 32px; height: 32px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    background: var(--accent-bg);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .drop-zone p { font-size: 13px; color: var(--text-muted); margin: 0; }
+  .drop-zone small { font-size: 11px; color: var(--text-hint); margin-top: 4px; display: block; }
+
+  .file-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+  .file-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .ext-badge {
+    font-size: 10px; font-weight: 600;
+    padding: 1px 5px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .ext-pdf  { background: #faece7; color: #993c1d; }
+  .ext-txt  { background: #e6f1fb; color: #185fa5; }
+  .ext-docx { background: #eeedfe; color: #534ab7; }
+  .ext-md   { background: #eaf3de; color: #3b6d11; }
+  .ext-other{ background: #f1efe8; color: #5f5e5a; }
+
+  .chip-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .chip-size { color: var(--text-hint); flex-shrink: 0; }
+  .chip-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-hint); font-size: 15px; padding: 0 2px;
+    line-height: 1; flex-shrink: 0;
+  }
+  .chip-remove:hover { color: #a32d2d; }
+
+  .reset-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 10px; font-size: 12px; color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    width: 100%; margin-top: 12px;
+    padding: 9px;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .status-box {
+    margin-top: 10px; padding: 9px 12px;
+    border-radius: var(--radius-sm); font-size: 12px; line-height: 1.5;
+    display: none;
+  }
+  .status-ok  { background: var(--success-bg); color: var(--success-text); display: block; }
+  .status-err { background: var(--error-bg);   color: var(--error-text);   display: block; }
+
+  .divider { height: 1px; background: var(--border); margin: 1.25rem 0 0; }
+
+  /* avatar list */
+  .avatar-list { display: flex; flex-direction: column; gap: 6px; padding: 0.75rem 1.25rem 1.25rem; }
+
+  .avatar-chip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    cursor: pointer; transition: background 0.12s;
+    background: var(--surface);
+  }
+  .avatar-chip:hover { background: var(--bg); }
+  .avatar-chip.active { background: var(--accent-bg); border-color: var(--accent); }
+  .download-btn {
+    flex-shrink: 0; background: none;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 3px 8px; font-size: 11px; color: var(--text-muted);
+    cursor: pointer; transition: background 0.12s;
+  }
+  .download-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .clear-btn {
+    flex-shrink: 0; background: none;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 3px 8px; font-size: 11px; color: var(--text-muted);
+    cursor: pointer; transition: background 0.12s;
+  }
+  .clear-btn:hover { background: var(--error-bg); color: var(--error-text); border-color: var(--error-text); }
+  .avatar-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  .avatar-initial {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--avatar-bg); color: var(--avatar-text);
+    font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .avatar-info { flex: 1; min-width: 0; }
+  .avatar-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .avatar-meta { font-size: 11px; color: var(--text-hint); }
+
+  .no-avatars {
+    font-size: 12px; color: var(--text-hint);
+    padding: 0.5rem 1.25rem 1.25rem;
+    font-style: italic;
+  }
+
+  /* ── RIGHT PANEL (CHAT) ── */
+  .panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .chat-header {
+    padding: 0 1.5rem;
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .chat-avatar-dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--avatar-bg); color: var(--avatar-text);
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .chat-avatar-name { font-size: 14px; font-weight: 500; }
+  .chat-avatar-sub  { font-size: 12px; color: var(--text-hint); }
+
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text-hint); gap: 8px;
+  }
+  .empty-icon { font-size: 32px; opacity: 0.4; }
+  .empty-state p { font-size: 13px; }
+
+  .messages {
+    flex: 1; overflow-y: auto;
+    padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+
+  .msg { display: flex; gap: 10px; max-width: 78%; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.bot  { align-self: flex-start; }
+
+  .msg-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .msg.bot .msg-avatar  { background: var(--avatar-bg); color: var(--avatar-text); }
+  .msg.user .msg-avatar { background: var(--accent-bg); color: var(--accent-text); }
+
+  .msg-bubble {
+    padding: 9px 13px;
+    border-radius: var(--radius);
+    font-size: 13px; line-height: 1.6;
+  }
+  .msg.bot .msg-bubble  { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-top-left-radius: 3px; }
+  .msg.user .msg-bubble { background: var(--accent); color: #fff; border-top-right-radius: 3px; }
+
+  .msg-bubble.typing { color: var(--text-hint); font-style: italic; }
+
+  .chat-input-row {
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  #chat-input {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+    font-family: var(--font);
+    transition: border-color 0.15s;
+  }
+  #chat-input:focus { border-color: var(--accent); background: var(--surface); }
+
+  .send-btn {
+    padding: 9px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.15s;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+  .send-btn:hover:not(:disabled) { opacity: 0.88; }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .chat-hint {
+    font-size: 11px; color: var(--text-hint);
+    text-align: center; padding: 0 0 0.5rem;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Clone<span>X</span></div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Upload + Avatar List -->
+  <div class="panel-left">
+
+    <div class="panel-section">
+      <div class="section-title">Create avatar</div>
+
+      <label class="field-label">Avatar name</label>
+      <input type="text" id="avatarName" placeholder="What do you want to name your avatar?" />
+
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">&#8679;</div>
+        <p>Drop files or click to browse</p>
+        <small>PDF · TXT · DOCX · MD — multiple files OK</small>
+        <input type="file" id="fileInput" multiple accept=".pdf,.txt,.docx,.md" style="display:none" />
+      </div>
+
+      <div class="file-list" id="fileList"></div>
+
+      <label class="field-label" style="margin-top:14px;">
+        Role &amp; personality
+        <span style="font-size:10px;color:var(--text-hint);font-weight:400;margin-left:4px;">optional</span>
+      </label>
+      <textarea
+        id="avatarPersona"
+        rows="4"
+        placeholder="Describe how your avatar should behave. e.g. &#10;&#10;'You are a friendly customer support agent for Acme Co. Always greet the user warmly, answer only questions about our products, and end every reply with &quot;Is there anything else I can help you with?&quot;'"
+        style="width:100%;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;resize:vertical;font-family:var(--font);line-height:1.5;transition:border-color 0.15s;"
+        onfocus="this.style.borderColor='var(--accent)';this.style.background='var(--surface)'"
+        onblur="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+      ></textarea>
+
+      <button class="btn-primary" id="uploadBtn" disabled>Upload &amp; index files</button>
+
+      <div class="status-box" id="uploadStatus"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="panel-section" style="padding-bottom:0.5rem;">
+      <div class="section-title">Your avatars</div>
+    </div>
+
+    <div id="avatarListContainer">
+      <div class="no-avatars">No avatars yet — create one above.</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Chat -->
+  <div class="panel-right">
+
+    <div class="chat-header" id="chatHeader">
+      <div class="empty-state" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:0;">
+        <span style="font-size:13px;color:var(--text-hint);">Select an avatar on the left to start chatting</span>
+      </div>
+    </div>
+
+    <div id="chatBody" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="empty-state">
+        <div class="empty-icon">&#9741;</div>
+        <p>No avatar selected</p>
+        <p style="font-size:12px;">Upload documents and select an avatar to begin.</p>
+      </div>
+    </div>
+
+    <div class="chat-input-row" id="chatInputRow" style="display:none;">
+      <textarea id="chat-input" rows="1" placeholder="Ask something about this person..."></textarea>
+      <button class="send-btn" id="sendBtn">Send</button>
+    </div>
+    <div class="chat-hint" id="chatHint" style="display:none;">Press Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+
+  </div>
+</div>
+
+<script>
+const state = {
+  files: [],
+  avatars: {},
+  activeAvatar: null,
+};
+
+const getBackendUrl = () => 'http://localhost:8000';
+
+/* ── File upload logic ── */
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList  = document.getElementById('fileList');
+const uploadBtn = document.getElementById('uploadBtn');
+const uploadStatus = document.getElementById('uploadStatus');
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  addFiles(Array.from(e.dataTransfer.files));
+});
+
+document.getElementById('avatarName').addEventListener('input', updateUploadBtn);
+
+function getExt(name) {
+  const m = name.match(/\.(\w+)$/);
+  return m ? m[1].toLowerCase() : 'other';
+}
+
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function addFiles(newFiles) {
+  const seen = new Set(state.files.map(f => f.name + f.size));
+  newFiles.forEach(f => { if (!seen.has(f.name + f.size)) state.files.push(f); });
+  renderFileList();
+}
+
+function removeFile(i) {
+  state.files.splice(i, 1);
+  renderFileList();
+}
+
+function renderFileList() {
+  fileList.innerHTML = '';
+  state.files.forEach((f, i) => {
+    const ext = getExt(f.name);
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.innerHTML = `
+      <span class="ext-badge ext-${['pdf','txt','docx','md'].includes(ext) ? ext : 'other'}">${ext}</span>
+      <span class="chip-name">${f.name}</span>
+      <span class="chip-size">${fmtBytes(f.size)}</span>
+      <button class="chip-remove" onclick="removeFile(${i})">&#215;</button>
+    `;
+    fileList.appendChild(chip);
+  });
+  updateUploadBtn();
+}
+
+function updateUploadBtn() {
+  const name = document.getElementById('avatarName').value.trim();
+  uploadBtn.disabled = !(name && state.files.length > 0);
+}
+
+uploadBtn.addEventListener('click', async () => {
+  const name     = document.getElementById('avatarName').value.trim();
+  const avatarId = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const persona  = document.getElementById('avatarPersona').value.trim();
+  const reset    = false;
+
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Indexing...';
+  uploadStatus.className = 'status-box';
+  uploadStatus.style.display = 'none';
+
+  const form = new FormData();
+  form.append('name', name);
+  form.append('avatar_id', avatarId);
+  form.append('persona', persona);
+  form.append('reset', reset);
+  state.files.forEach(f => form.append('files', f));
+
+  try {
+    const res  = await fetch(`${getBackendUrl()}/avatar/upload`, { method: 'POST', body: form });
+    const data = await res.json();
+    if (res.ok) {
+      let msg = `Avatar "${data.avatar_name}" ready — ${data.total_chunks} chunks from ${data.files_processed.length} file(s).`;
+      if (data.files_failed.length) msg += ` (${data.files_failed.length} failed)`;
+      showUploadStatus(msg, 'ok');
+      state.files = [];
+      renderFileList();
+      state.avatars[avatarId] = { name, id: avatarId, chunks: data.total_chunks, files: data.files_processed, persona };
+      renderAvatarList();
+    } else {
+      showUploadStatus(data.detail?.message || data.detail || 'Upload failed.', 'err');
+    }
+  } catch {
+    showUploadStatus('Cannot reach backend at ' + getBackendUrl(), 'err');
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = 'Upload & index files';
+  updateUploadBtn();
+});
+
+function showUploadStatus(msg, type) {
+  uploadStatus.className = 'status-box status-' + type;
+  uploadStatus.textContent = msg;
+}
+
+/* ── Avatar list ── */
+function renderAvatarList() {
+  const container = document.getElementById('avatarListContainer');
+  const list = Object.values(state.avatars);
+  if (list.length === 0) {
+    container.innerHTML = '<div class="no-avatars">No avatars yet — create one above.</div>';
+    return;
+  }
+  container.innerHTML = '<div class="avatar-list">' +
+    list.map(a => `
+      <div class="avatar-chip ${state.activeAvatar === a.id ? 'active' : ''}" onclick="selectAvatar('${a.id}')">
+        <div class="avatar-initial">${initials(a.name)}</div>
+        <div class="avatar-info">
+          <div class="avatar-name">${a.name}</div>
+          <div class="avatar-meta">${a.chunks} chunks &middot; ${(a.files||[]).length} file(s)${a.persona ? ' &middot; custom role' : ''}</div>
+        </div>
+        <div class="avatar-actions">
+          <button class="download-btn" title="Download as zip" onclick="event.stopPropagation(); downloadAvatar('${a.id}', '${a.name}')">&#8595; zip</button>
+          <button class="clear-btn" title="Clear this avatar" onclick="event.stopPropagation(); clearAvatar('${a.id}', '${a.name}')">&#10005; clear</button>
+        </div>
+      </div>
+    `).join('') + '</div>';
+}
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+}
+
+/* ── Chat ── */
+const chatMessages = {};
+
+function selectAvatar(id) {
+  state.activeAvatar = id;
+  renderAvatarList();
+
+  const avatar = state.avatars[id];
+  const ini    = initials(avatar.name);
+
+  document.getElementById('chatHeader').innerHTML = `
+    <div class="chat-avatar-dot">${ini}</div>
+    <div>
+      <div class="chat-avatar-name">${avatar.name}</div>
+      <div class="chat-avatar-sub">AI digital twin · ${avatar.chunks} chunks</div>
+    </div>
+  `;
+
+  if (!chatMessages[id]) chatMessages[id] = [];
+
+  renderMessages(id);
+
+  document.getElementById('chatInputRow').style.display = 'flex';
+  document.getElementById('chatHint').style.display = 'block';
+  document.getElementById('chat-input').focus();
+}
+
+function renderMessages(avatarId) {
+  const msgs = chatMessages[avatarId] || [];
+  const avatar = state.avatars[avatarId];
+  const ini    = initials(avatar.name);
+
+  const body = document.getElementById('chatBody');
+
+  if (msgs.length === 0) {
+    body.innerHTML = `
+      <div class="empty-state">
+        <div class="chat-avatar-dot" style="width:48px;height:48px;font-size:16px;">${ini}</div>
+        <p style="font-weight:500;">${avatar.name}</p>
+        <p style="font-size:12px;">Ask me anything about my background, skills, or projects.</p>
+      </div>
+    `;
+    return;
+  }
+
+  body.innerHTML = '<div class="messages" id="messageList"></div>';
+  const list = document.getElementById('messageList');
+  msgs.forEach(m => appendMsgDOM(list, m.role, m.text, ini));
+  list.scrollTop = list.scrollHeight;
+}
+
+function appendMsgDOM(container, role, text, ini) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const avatarHTML = `<div class="msg-avatar">${role === 'bot' ? ini : 'You'[0]}</div>`;
+  const bubble = `<div class="msg-bubble ${text === '...' ? 'typing' : ''}">${escHtml(text)}</div>`;
+  div.innerHTML = role === 'user' ? bubble + avatarHTML : avatarHTML + bubble;
+  container.appendChild(div);
+}
+
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/^[-*]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/`(.+?)`/g, '$1')
+    .trim();
+}
+
+function escHtml(s) {
+  return stripMarkdown(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+const chatInput = document.getElementById('chat-input');
+const sendBtn   = document.getElementById('sendBtn');
+
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+});
+
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || !state.activeAvatar) return;
+
+  const id     = state.activeAvatar;
+  const avatar = state.avatars[id];
+  const ini    = initials(avatar.name);
+
+  chatMessages[id].push({ role: 'user', text });
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  // ensure messages panel exists
+  let list = document.getElementById('messageList');
+  if (!list) {
+    document.getElementById('chatBody').innerHTML = '<div class="messages" id="messageList"></div>';
+    list = document.getElementById('messageList');
+    chatMessages[id].slice(0,-1).forEach(m => appendMsgDOM(list, m.role, m.text, ini));
+  }
+  appendMsgDOM(list, 'user', text, ini);
+
+  // typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'msg bot';
+  typingDiv.id = 'typing';
+  typingDiv.innerHTML = `<div class="msg-avatar">${ini}</div><div class="msg-bubble typing">...</div>`;
+  list.appendChild(typingDiv);
+  list.scrollTop = list.scrollHeight;
+
+  try {
+    const res  = await fetch(`${getBackendUrl()}/avatar/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: text, avatar_id: id, n_results: 3 })
+    });
+    const data = await res.json();
+    typingDiv.remove();
+
+    const answer = res.ok ? data.answer : (data.detail || 'Something went wrong.');
+    chatMessages[id].push({ role: 'bot', text: answer });
+    appendMsgDOM(list, 'bot', answer, ini);
+  } catch {
+    typingDiv.remove();
+    const err = 'Could not reach the backend. Is it running?';
+    chatMessages[id].push({ role: 'bot', text: err });
+    appendMsgDOM(list, 'bot', err, ini);
+  }
+
+  list.scrollTop = list.scrollHeight;
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+function downloadAvatar(id, name) {
+  const url = `${getBackendUrl()}/avatar/${id}/download`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${id}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function clearAvatar(id, name) {
+  if (!confirm(`Clear all data for "${name}"? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${getBackendUrl()}/avatar/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      delete state.avatars[id];
+      delete chatMessages[id];
+      if (state.activeAvatar === id) {
+        state.activeAvatar = null;
+        document.getElementById('chatHeader').innerHTML = `
+          <div class="empty-state" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:0;">
+            <span style="font-size:13px;color:var(--text-hint);">Select an avatar on the left to start chatting</span>
+          </div>`;
+        document.getElementById('chatBody').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">&#9741;</div>
+            <p>No avatar selected</p>
+            <p style="font-size:12px;">Upload documents and select an avatar to begin.</p>
+          </div>`;
+        document.getElementById('chatInputRow').style.display = 'none';
+        document.getElementById('chatHint').style.display = 'none';
+      }
+      renderAvatarList();
+    } else {
+      alert('Could not clear avatar. Is the backend running?');
+    }
+  } catch {
+    alert('Could not reach backend.');
+  }
+}
+
+/* ── Load existing avatars on page open ── */
+async function loadAvatars() {
+  try {
+    const res  = await fetch(`${getBackendUrl()}/avatars`);
+    const data = await res.json();
+    data.avatars.forEach(a => {
+      state.avatars[a.id] = { name: a.name, id: a.id, chunks: a.chunks, files: a.files || [], persona: a.persona || '' };
+    });
+    renderAvatarList();
+  } catch { /* backend not running yet, no-op */ }
+}
+
+loadAvatars();
+</script>
+</body>
+</html>
